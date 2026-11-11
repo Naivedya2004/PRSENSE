@@ -1,0 +1,3 @@
+-r requirements.txt
+# Developer tooling. Nothing here is required at runtime.
+ruff==0.15.0

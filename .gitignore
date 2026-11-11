@@ -1,0 +1,32 @@
+# Secrets: never commit real environment files
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+
+# Django
+backend/staticfiles/
+backend/media/
+*.sqlite3
+
+# Frontend (added in Phase 8)
+node_modules/
+frontend/dist/
+
+# ML artifacts: generated, potentially large; regenerate with the training command
+ml/artifacts/*
+!ml/artifacts/README.md
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

@@ -40,3 +40,21 @@ Phase 1 implements only `accounts.User`. The remaining entities from the product
 (GitHubConnection, Repository, PullRequest, PullRequestFile, AnalysisJob, RiskAnalysis, RiskFactor,
 AIReview, AIFinding, SuggestedTest, RepositoryFile, WebhookEvent) are added in the phase that
 uses them, so that each migration is tested against real behavior.
+
+## Phase 2 decisions (GitHub integration)
+
+| # | Decision | Rationale |
+|---|----------|-----------|
+| 10 | GitHub REST API version defaults to `2026-03-10` (configurable) | Current version listed by GitHub; `2022-11-28` remains supported until March 2028 |
+| 11 | OAuth state stored as a SHA-256 hash in an `OAuthState` table | Single-use and expiring in the database. Redis is not needed yet, and a hash means a database read cannot replay a state |
+| 12 | `connect` returns `authorization_url` as JSON | A browser redirect cannot carry the Bearer JWT without placing it in a URL, which the specification forbids |
+| 13 | Repositories are per PRSense user (unique on `user` + `github_repo_id`) | Access and sync state differ per user. The GitHub ID remains the external identity |
+| 14 | Repositories missing from GitHub are deactivated, not deleted | Keeps PR history for analysis instead of destroying it |
+| 15 | Token refresh runs under `select_for_update` | Two concurrent requests must not both spend a single-use refresh token |
+| 16 | Webhook payloads are validated and recorded, but not used to write PR data in Phase 2 | Expensive and trust-sensitive work moves to Celery in Phase 7; the payload is not trusted until PRSense re-fetches it |
+| 17 | `WebhookEvent` added to the design | Needed for idempotency, which the specification requires |
+| 18 | PR sync reads all pages (capped by `GITHUB_PR_SYNC_MAX_PAGES`) before writing | Avoids holding a database transaction open during HTTP calls. The cap means very large repositories are only partially synced; this is a known limitation |
+
+Known limitations in Phase 2: live GitHub OAuth has not been exercised against a real GitHub App;
+the callback and token exchange are covered by mocked tests only. Synchronization runs inside the
+request, which will move to Celery in Phase 7.

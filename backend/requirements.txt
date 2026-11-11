@@ -5,3 +5,5 @@ djangorestframework==3.18.3
 djangorestframework-simplejwt==5.5.1
 psycopg[binary]==3.3.8
 python-dotenv==1.2.4
+httpx==0.28.1
+cryptography==46.0.7

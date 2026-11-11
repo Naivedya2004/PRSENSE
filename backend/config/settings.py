@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "accounts",
+    "repositories",
+    "github_integration",
     "api",
 ]
 
@@ -122,6 +124,7 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "api.exceptions.safe_exception_handler",
     "DEFAULT_PAGINATION_CLASS": "api.pagination.StandardPagination",
     "PAGE_SIZE": 20,
+    "DEFAULT_THROTTLE_RATES": {"auth": "10/min"},
 }
 
 SIMPLE_JWT = {
@@ -152,4 +155,25 @@ LOGGING = {
         "console": {"class": "logging.StreamHandler", "formatter": "standard"},
     },
     "root": {"handlers": ["console"], "level": os.environ.get("DJANGO_LOG_LEVEL", "INFO")},
+    "loggers": {
+        # httpx logs every request URL at INFO. Keep it at WARNING so logs stay quiet and free of request detail.
+        "httpx": {"level": "WARNING"},
+    },
 }
+
+# GitHub App (user-to-server OAuth) and PRSense-specific integration settings.
+# Secrets come only from the environment. Never hardcode or log them.
+GITHUB_CLIENT_ID = os.environ.get("GITHUB_CLIENT_ID", "")
+GITHUB_CLIENT_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "")
+GITHUB_REDIRECT_URI = os.environ.get("GITHUB_REDIRECT_URI", "http://127.0.0.1:8000/api/github/callback/")
+GITHUB_WEBHOOK_SECRET = os.environ.get("GITHUB_WEBHOOK_SECRET", "")
+GITHUB_API_BASE_URL = os.environ.get("GITHUB_API_BASE_URL", "https://api.github.com").rstrip("/")
+GITHUB_WEB_BASE_URL = os.environ.get("GITHUB_WEB_BASE_URL", "https://github.com").rstrip("/")
+# Supported versions: 2026-03-10 (current) and 2022-11-28. See GitHub's API versions page.
+GITHUB_API_VERSION = os.environ.get("GITHUB_API_VERSION", "2026-03-10")
+GITHUB_HTTP_TIMEOUT_SECONDS = float(os.environ.get("GITHUB_HTTP_TIMEOUT_SECONDS", "10"))
+GITHUB_PR_SYNC_MAX_PAGES = int(os.environ.get("GITHUB_PR_SYNC_MAX_PAGES", "10"))
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+# Fernet key used to encrypt GitHub OAuth tokens at rest. Generate with:
+#   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+TOKEN_ENCRYPTION_KEY = os.environ.get("TOKEN_ENCRYPTION_KEY", "")
